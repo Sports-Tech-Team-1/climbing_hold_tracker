@@ -9,6 +9,7 @@ Currently, only hold-finding on a still image is supported. The Climbing Hold Tr
 <!--ts-->
    * [Dependencies](#dependencies)
    * [Running the code](#running)
+   * [TODO](#todo)
 <!--te-->
 
 <a name="dependencies"></a>
@@ -23,6 +24,10 @@ opencv-contrib-python 3.4.2.16
 tqdm 4.43.0
 numpy 1.16.1
 ```
+Example Python library installation:
+```
+pip3 install opencv-contrib-python==3.4.2.16
+```
 
 <a name="running"></a>
 ## Running the code
@@ -36,7 +41,10 @@ numpy 1.16.1
   ```
   python3 find_holds.py -hd images/example1/holds -w images/example1/wall.png -o images/example1/out.png
   ```
-
-
-
-
+  
+<a name="todo"></a>
+## TODO
+- Extend hold tracking to operate on video stream
+- Improve performance of SIFT keypoint computation
+- Verify accuracy versus angle discrepancy of hold and wall images
+- Integrate with climber body tracking and move prediction
