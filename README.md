@@ -3,7 +3,7 @@
 ## Introduction
 Rock climbing has been rapidly gaining popularity in the past few years. This project seeks to augment this growing sport using the latest in computer vision and machine learning technologies, improving the climbing experience for beginners and seasoned veterans alike.
 
-Currently, only hold-finding on a still image is supported. The Climbing Hold Tracker will track designated holds along a climbing route in a video feed. The Climbing Hold Tracker will serve as the foundation for the more extensive Virtual Climbing Coach.
+Currently, only hold-finding on a still image is supported. The Climbing Hold Tracker will track designated holds along a climbing route in a video feed. The Climbing Hold Tracker will serve as the foundation for our Virtual Climbing Coach project for CMU's 18-738: Sports Technology.
 
 ## Table of contents
 <!--ts-->
