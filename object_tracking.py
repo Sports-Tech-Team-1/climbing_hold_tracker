@@ -30,6 +30,7 @@
 import argparse
 import sys
 import time
+from collections import deque
 
 # Image processing libraries
 # $ pip3 install opencv-contrib-python==3.4.2.16
@@ -48,25 +49,30 @@ WHITE =     "\u001b[37m"
 RESET =     "\u001b[0m"
 
 
-
 def object_tracking (video):
 
     cap = cv2.VideoCapture(video)
 
     ret, frame_old = cap.read()
+    ret, frame_bfr = cap.read() 
     ret, frame_cur = cap.read()    
+     
 
     # Gaussian blur parameters
-    kernel = (21,21)
+    hold_kernel = (21,21)
+    person_kernel = (5,5)
     sigma = 0
 
     #Threshold parameters
-    threshold = 20
+    hold_threshold = 40
+    person_threshold = 60
     max_threshold = 255
+
 
     #dilate parameters
     dilate_kernel = None
-    iterations_Count = 1
+    hold_iterations_Count = 1
+    person_iterations_Count = 3
 
     #Text and color properties 
     blue = (255, 0, 0)
@@ -81,42 +87,63 @@ def object_tracking (video):
     frame_Count = 0
     frame_count_threshold = 50
 
+    #hold area parameters
+    hold_min_area = 2300
+    hold_max_area = 5000
+
     while cap.isOpened():
-
-        diff = cv2.absdiff (frame_old,frame_cur)
-        gray = cv2.cvtColor (diff,cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur (gray,kernel,sigma)
-        _,thresh = cv2.threshold (blur, threshold, max_threshold, cv2.THRESH_BINARY)
-        dilated = cv2.dilate (thresh, dilate_kernel, iterations = iterations_Count)
-        _, contours, _ = cv2.findContours (dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        # Contour Finding for hold 
+        hold_diff = cv2.absdiff (frame_old,frame_cur)
+        hold_gray = cv2.cvtColor (hold_diff,cv2.COLOR_BGR2GRAY)
+        hold_blur = cv2.GaussianBlur (hold_gray,hold_kernel,sigma)
+        _,hold_thresh = cv2.threshold (hold_blur, hold_threshold, max_threshold, cv2.THRESH_BINARY)
+        hold_dilated = cv2.dilate (hold_thresh, dilate_kernel, iterations = hold_iterations_Count)
+        _,hold_contours,_ = cv2.findContours (hold_dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         
-        for contour in contours:
-            (x, y, w, h) = cv2.boundingRect (contour)
+        # Contour Finding for Person
+        person_diff = cv2.absdiff (frame_bfr,frame_cur)
+        person_gray = cv2.cvtColor (person_diff,cv2.COLOR_BGR2GRAY)
+        person_blur = cv2.GaussianBlur (person_gray,person_kernel,sigma)
+        _,person_thresh = cv2.threshold (person_blur, person_threshold, max_threshold, cv2.THRESH_BINARY)
+        
 
-            if cv2.contourArea (contour) > 1300 and cv2.contourArea (contour) < 5000:
+        # person_dilated = cv2.dilate (person_thresh, dilate_kernel, iterations = person_iterations_Count)
+        # _, person_contours, _ = cv2.findContours (person_dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        # (x, y, w, h) = cv2.boundingRect (hold_thresh)
+        for hold_contour in hold_contours:
+            (x, y, w, h) = cv2.boundingRect (hold_contour)
+            area = cv2.contourArea (hold_contour)
+            if  area > hold_min_area and area < hold_max_area:
                 cv2.rectangle (frame_cur, (x, y), (x+w, y+h),blue , thickness )
-            # elif cv2.contourArea (contour) > 5000:
-            #     cv2.rectangle (frame_cur, (x, y), (x+w, y+h),green , thickness )
-            #     cv2. putText (frame_cur, "Status: {}".format("Climbing"), font_pos, 
-            #                cv2.FONT_HERSHEY_SIMPLEX, font_size, red, font_thick)
+            
+        # for person_contour in person_contours:
+        #     (x, y, w, h) = cv2.boundingRect (person_contour)
+        #     if cv2.contourArea (person_contour) > 5000:
+        #         cv2.rectangle (frame_cur, (x, y), (x+w, y+h), green , thickness )
+        #         cv2. putText (frame_cur, "Status: {}".format("Climbing"), font_pos, 
+        #                    cv2.FONT_HERSHEY_SIMPLEX, font_size, red, font_thick)
             
 
-        # contours for all objects
+        # contours for all objects in current frame
         # cv2. drawContours (frame_1, contours, -1, (0,0,255), 2)
 
         #  visualization
         cv2.imshow("Camera feed",frame_cur)
+        # cv2.imshow("Person feed",hold_thresh)
 
-        frame_Count += 1
-
+        # changing the reference frame for hold once in threshold frames
         if frame_Count == frame_count_threshold:
             frame_Count = 0
             frame_old = frame_cur
-
+        else:
+            frame_Count += 1
+        
+        # Current becomes before frame
+        frame_bfr = frame_cur
         ret, frame_cur = cap.read()
-
            
-        if cv2.waitKey(40) == 27 or cv2.waitKey(40) == 'q':
+        if cv2.waitKey(40) == 27 or cv2.waitKey(40) == ord("q"):
             break
     
     cv2.destroyAllWindows()
